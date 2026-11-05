@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1030" />
+<title>Stick Fight</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap");
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+html, body, #root { margin: 0; height: 100%; background: #000; }
+body { font-family: Rubik, system-ui, sans-serif; color: #fff; overflow: hidden; }
+
+.app { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.app.night { background: linear-gradient(#0d1030, #2a1b5c); }
+.app.sunset { background: linear-gradient(#ff7e5f, #7a3b4f); }
+.app.day { background: linear-gradient(#6dd5fa, #2b7a8f); }
+.app.neon { background: radial-gradient(circle at 50% 30%, #3a0ca3, #050014 70%); }
+
+/* Bosh menyu */
+.home { display: flex; flex-direction: column; gap: 14px; align-items: center; width: min(86vw, 340px); }
+.logo { text-align: center; margin-bottom: 8px; }
+.duel { width: 190px; max-height: 18vh; }
+.duel g { animation: sway 2.4s ease-in-out infinite alternate; }
+.duel g:last-child { animation-delay: 0.6s; }
+@keyframes sway { to { transform: translateY(-4px); } }
+.logo h1 { margin: 4px 0 0; font-weight: 900; font-size: clamp(34px, 9vh, 64px); line-height: 0.95; letter-spacing: 2px; text-shadow: 0 4px 0 rgba(0, 0, 0, 0.35); }
+
+.big { width: 100%; padding: 14px 20px; font: 900 20px Rubik, sans-serif; color: #1a1030; background: #ffd23f; border: 0; border-radius: 14px; box-shadow: 0 5px 0 #b38c00; cursor: pointer; transition: transform 0.08s, box-shadow 0.08s; }
+.big:active { transform: translateY(4px); box-shadow: 0 1px 0 #b38c00; }
+.big.alt { background: #4dc3ff; box-shadow: 0 5px 0 #1f7aa8; }
+.big.alt:active { box-shadow: 0 1px 0 #1f7aa8; }
+.big.ghost { background: rgba(255, 255, 255, 0.14); color: #fff; box-shadow: 0 5px 0 rgba(0, 0, 0, 0.3); }
+
+/* Panellar */
+.panel { width: min(92vw, 460px); max-height: 94vh; display: flex; flex-direction: column; gap: 10px; padding: 18px; background: rgba(10, 8, 30, 0.72); backdrop-filter: blur(8px); border-radius: 20px; }
+.panel.scroll { overflow-y: auto; }
+.panel h2 { margin: 0 0 4px; font-weight: 900; }
+.panel h4 { margin: 10px 0 0; font-size: 13px; opacity: 0.6; font-weight: 700; }
+.card { background: rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.card h3 { margin: 0; font-size: 15px; }
+.code { font: 900 44px Rubik, sans-serif; letter-spacing: 8px; text-align: center; color: #ffd23f; user-select: all; }
+.msg { min-height: 20px; margin: 0; font-size: 14px; opacity: 0.8; text-align: center; }
+.back { background: none; border: 0; color: #fff; font: 700 16px Rubik, sans-serif; padding: 8px; cursor: pointer; opacity: 0.8; }
+.inp { width: 100%; padding: 12px; font: 700 22px Rubik, sans-serif; text-align: center; letter-spacing: 6px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.3); color: #fff; }
+.inp.sm { width: 130px; font-size: 15px; letter-spacing: 0; padding: 8px; }
+
+/* Sozlamalar qatori */
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 15px; }
+.row input[type="range"] { width: 150px; accent-color: #ffd23f; }
+.tog { width: 50px; height: 28px; border-radius: 14px; border: 0; background: rgba(255, 255, 255, 0.2); position: relative; cursor: pointer; flex: none; }
+.tog i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform 0.18s; }
+.tog.on { background: #7bff6b; }
+.tog.on i { transform: translateX(22px); }
+.seg { display: flex; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 3px; flex-wrap: wrap; }
+.seg button { border: 0; background: none; color: #fff; padding: 6px 10px; border-radius: 8px; font: 700 13px Rubik, sans-serif; cursor: pointer; }
+.seg button.on { background: #ffd23f; color: #1a1030; }
+.cols { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 170px; }
+.cols b { width: 24px; height: 24px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
+.cols b.on { border-color: #fff; }
+
+/* O'yin */
+.game { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.game canvas { width: 100%; height: 100%; max-height: 100vh; object-fit: contain; touch-action: none; }
+.pause { position: absolute; top: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 16px; cursor: pointer; }
+.pads { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: space-between; padding: 0 14px; pointer-events: none; }
+.pads.flip { flex-direction: row-reverse; }
+.grp { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+.pad { width: calc(62px * var(--s)); height: calc(62px * var(--s)); border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.18); color: #fff; font-size: calc(24px * var(--s)); touch-action: none; backdrop-filter: blur(3px); }
+.pad:active { background: rgba(255, 210, 63, 0.55); transform: scale(0.94); }
+.pad.p { background: rgba(255, 90, 77, 0.35); }
+.pad.k { background: rgba(255, 140, 60, 0.35); }
+.pad.b { background: rgba(77, 195, 255, 0.3); }
+.hint { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 11px; opacity: 0.5; pointer-events: none; }
+@media (pointer: coarse) { .hint { display: none; } }
+
+.overlay { position: absolute; inset: 0; background: rgba(5, 3, 20, 0.78); display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; }
+.overlay h2 { font-size: clamp(26px, 6vw, 46px); font-weight: 900; margin: 0 0 6px; color: #ffd23f; text-align: center; }
+.overlay .big { width: 240px; }
+
+/* Portretda gorizontal burishni so'rash */
+@media (orientation: portrait) {
+  .game::after { content: "📱 Telefonni gorizontal buring"; position: absolute; top: 12px; left: 0; right: 0; text-align: center; font-size: 13px; opacity: 0.8; pointer-events: none; }
+  .game canvas { height: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .duel g { animation: none; } }
+
+/* Yangi harakatlar va chit */
+.pause.cheatbtn { right: 54px; }
+.grp.act { display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
+.grp.act .pad { width: calc(54px * var(--s)); height: calc(54px * var(--s)); font-size: calc(21px * var(--s)); }
+.pad.q { background: rgba(199, 125, 255, 0.35); }
+.pad.e { background: rgba(123, 255, 107, 0.3); }
+.overlay.cheat .inp { width: 240px; }
+.overlay .list { margin: 0; font-size: 12px; opacity: 0.55; text-align: center; max-width: 300px; }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ================= SOZLAMALAR ================= */
+const DEF = {
+  sfx: 0.8, music: 0.4, vibrate: true, shake: true, hints: true,
+  diff: 2, hp: 100, time: 60, btnSize: 1, leftHand: false,
+  theme: "night", c1: "#ff5a4d", c2: "#4dc3ff", name: "Jangchi",
+};
+const loadCfg = () => {
+  try { return { ...DEF, ...JSON.parse(localStorage.getItem("sf_cfg") || "{}") }; }
+  catch { return DEF; }
+};
+const THEMES = {
+  night: ["#0d1030", "#2a1b5c", "#1a1a2e"],
+  sunset: ["#ff7e5f", "#feb47b", "#3b1f2b"],
+  day: ["#6dd5fa", "#e0f7ff", "#3a7d44"],
+  neon: ["#050014", "#3a0ca3", "#0b0b1a"],
+};
+const COLORS = ["#ff5a4d", "#4dc3ff", "#ffd23f", "#7bff6b", "#c77dff", "#ffffff"];
+
+/* ================= OVOZ (WebAudio) ================= */
+let ctx = null, master = null, musGain = null, musTimer = null, step = 0;
+const vol = { sfx: 0.8, music: 0.4 };
+function ac() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.connect(ctx.destination);
+    musGain = ctx.createGain(); musGain.connect(master);
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  return ctx;
+}
+function tone(f, d, type = "square", v = 0.2, slide = 0, dest, when = 0) {
+  const c = ac(), o = c.createOscillator(), g = c.createGain();
+  const t = c.currentTime + when;
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+  o.connect(g); g.connect(dest || master); o.start(t); o.stop(t + d + 0.05);
+}
+function noise(d, v = 0.3, freq = 1200) {
+  const c = ac(), n = c.sampleRate * d, b = c.createBuffer(1, n, c.sampleRate);
+  const a = b.getChannelData(0);
+  for (let i = 0; i < n; i++) a[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const s = c.createBufferSource(); s.buffer = b;
+  const fl = c.createBiquadFilter(); fl.type = "bandpass"; fl.frequency.value = freq;
+  const g = c.createGain(); g.gain.value = v;
+  s.connect(fl); fl.connect(g); g.connect(master); s.start();
+}
+const SFX = {
+  spin: () => { noise(0.35, 0.5 * vol.sfx, 700); tone(500, 0.4, "sawtooth", 0.2 * vol.sfx, 500); },
+  sweep: () => { noise(0.25, 0.5 * vol.sfx, 300); tone(200, 0.25, "triangle", 0.25 * vol.sfx, -120); },
+  cheat: () => [392, 523, 659, 784, 1046].forEach((f, i) => tone(f, 0.12, "square", 0.2 * vol.sfx, 0, null, i * 0.06)),
+  click: () => tone(660, 0.08, "triangle", 0.25 * vol.sfx, 300),
+  jump: () => tone(300, 0.2, "sine", 0.3 * vol.sfx, 400),
+  punch: () => noise(0.12, 0.4 * vol.sfx, 1800),
+  kick: () => noise(0.2, 0.5 * vol.sfx, 900),
+  hit: () => { noise(0.18, 0.7 * vol.sfx, 500); tone(140, 0.2, "sawtooth", 0.4 * vol.sfx, -90); },
+  block: () => tone(900, 0.1, "square", 0.25 * vol.sfx, -300),
+  start: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.2, "triangle", 0.3 * vol.sfx, 0, null, i * 0.1)),
+  win: () => [523, 659, 784, 659, 784, 1046].forEach((f, i) => tone(f, 0.25, "triangle", 0.3 * vol.sfx, 0, null, i * 0.12)),
+  ko: () => tone(400, 0.7, "sawtooth", 0.4 * vol.sfx, -330),
+};
+const NOTES = [110, 0, 165, 0, 110, 0, 196, 165, 98, 0, 147, 0, 98, 0, 185, 147];
+const LEAD = [440, 0, 523, 0, 659, 0, 523, 0, 392, 0, 494, 0, 587, 0, 494, 440];
+function startMusic() {
+  stopMusic(); ac();
+  musTimer = setInterval(() => {
+    const i = step++ % 16;
+    if (NOTES[i]) tone(NOTES[i], 0.22, "sawtooth", 0.35, 0, musGain);
+    if (LEAD[i] && i % 2 === 0) tone(LEAD[i], 0.15, "square", 0.12, 0, musGain);
+    if (i % 4 === 0) tone(60, 0.15, "sine", 0.6, -30, musGain);
+  }, 170);
+}
+function stopMusic() { clearInterval(musTimer); musTimer = null; }
+function applyVol(c) {
+  vol.sfx = c.sfx; vol.music = c.music;
+  if (musGain) musGain.gain.value = c.music;
+}
+
+/* ================= O'YIN MANTIQI ================= */
+const W = 800, H = 400, GY = 330;
+const MV = {
+  punch: { d: 0.28, dmg: 6, rng: 72, kb: 380 },
+  kick: { d: 0.42, dmg: 11, rng: 90, kb: 380 },
+  spin: { d: 0.6, dmg: 14, rng: 105, kb: 560, both: true, stun: 0.4 },
+  sweep: { d: 0.45, dmg: 8, rng: 95, kb: 120, low: true },
+};
+const CHEATS = {
+  KUCH: ["Zarba kuchi x2", (G) => { G.ch.dmg = 2; }],
+  SUPER: ["Zarba kuchi x4", (G) => { G.ch.dmg = 4; }],
+  TEZ: ["Tezlik +60%", (G) => { G.ch.spd = 1.6; }],
+  SAKRA: ["Super sakrash", (G) => { G.ch.jmp = 1.4; }],
+  OLMAS: ["O'lmas rejim", (G) => { G.ch.god = true; }],
+  JON: ["Jon to'ldirildi", (G, cfg) => { G.f[0].hp = cfg.hp; }],
+  ZAIF: ["Raqib zaiflashdi", (G) => { G.f[1].hp = Math.max(1, G.f[1].hp * 0.3); }],
+  HAMMASI: ["Hamma kuchlar!", (G, cfg) => { Object.assign(G.ch, { dmg: 3, spd: 1.5, jmp: 1.3, god: true }); G.f[0].hp = cfg.hp; }],
+  NOL: ["Chitlar o'chirildi", (G) => { Object.assign(G.ch, { dmg: 1, spd: 1, jmp: 1, god: false }); }],
+};
+const mkF = (x, face, hp) => ({ x, y: GY, vy: 0, hp, face, st: "idle", t: 0, d: 0, hit: false, blk: false, walk: 0, kv: 0, pv: {} });
+function newRound(G, cfg) {
+  G.f = [mkF(220, 1, cfg.hp), mkF(580, -1, cfg.hp)];
+  G.time = cfg.time; G.phase = "ready"; G.pt = 1.2; G.msg = "RAUND " + (G.r[0] + G.r[1] + 1);
+  G.ev.push("start");
+}
+const newGame = (cfg, ch) => { const G = { r: [0, 0], ev: [], spark: [], shake: 0, ch: ch || { dmg: 1, spd: 1, jmp: 1, god: false } }; newRound(G, cfg); return G; };
+
+function stepF(G, i, inp, dt) {
+  const f = G.f[i], o = G.f[1 - i], air = f.y < GY;
+  const edge = (k) => inp[k] && !f.pv[k];
+  f.blk = !!inp.b && !air && f.st === "idle";
+  if (f.st === "hurt" || f.st === "down") { f.t -= dt; if (f.t <= 0) f.st = "idle"; }
+  else if (MV[f.st]) {
+    f.t += dt;
+    const m = MV[f.st], cm = i === 0 ? G.ch.dmg : 1, god = i === 1 && G.ch.god;
+    if (!f.hit && f.t > f.d * 0.4 && f.t < f.d * 0.8 && o.st !== "down") {
+      const dx = (o.x - f.x) * f.face;
+      const inR = m.both ? Math.abs(o.x - f.x) < m.rng : dx > 0 && dx < m.rng;
+      const lvl = m.low ? o.y >= GY - 5 : Math.abs(o.y - f.y) < 70;
+      if (inR && lvl) {
+        f.hit = true;
+        const guard = o.blk && !m.low && (m.both || o.face === -f.face);
+        o.hp = Math.max(0, o.hp - (god ? 0 : m.dmg * cm * (guard ? 0.15 : 1)));
+        o.kv = (Math.sign(o.x - f.x) || f.face) * (guard ? 150 : m.kb);
+        if (!guard && !god) { o.st = m.low ? "down" : "hurt"; o.t = m.low ? 0.9 : m.stun || 0.3; G.shake = m.low || m.both ? 0.28 : 0.18; }
+        G.ev.push(guard ? "block" : "hit");
+        G.spark.push({ x: o.x, y: o.y - 70, t: 0.25 });
+      }
+    }
+    if (f.t >= f.d) f.st = "idle";
+  }
+  if (f.st === "idle") {
+    const vx = ((inp.r ? 1 : 0) - (inp.l ? 1 : 0)) * (f.blk ? 0 : 230 * (i === 0 ? G.ch.spd : 1));
+    f.x += vx * dt; f.walk += Math.abs(vx) * dt * 0.06;
+    if (edge("j") && !air) { f.vy = -640 * (i === 0 ? G.ch.jmp : 1); G.ev.push("jump"); }
+    if (edge("p")) { f.st = "punch"; f.t = 0; f.d = 0.28; f.hit = false; G.ev.push("punch"); }
+    else if (edge("k")) { f.st = "kick"; f.t = 0; f.d = 0.42; f.hit = false; G.ev.push("kick"); }
+    else if (edge("q") && !air) { f.st = "spin"; f.t = 0; f.d = 0.6; f.hit = false; G.ev.push("spin"); }
+    else if (edge("e") && !air) { f.st = "sweep"; f.t = 0; f.d = 0.45; f.hit = false; G.ev.push("sweep"); }
+  }
+  f.vy += 1800 * dt; f.y += f.vy * dt;
+  if (f.y >= GY) { f.y = GY; f.vy = 0; }
+  f.x += f.kv * dt; f.kv *= 0.88;
+  f.x = Math.max(30, Math.min(W - 30, f.x));
+  if (f.y >= GY && f.st === "idle") f.face = o.x >= f.x ? 1 : -1;
+  f.pv = { ...inp };
+}
+function stepGame(G, in0, in1, dt, cfg) {
+  G.shake = Math.max(0, G.shake - dt);
+  G.spark = G.spark.filter((s) => (s.t -= dt) > 0);
+  if (G.phase === "over") return;
+  if (G.phase === "ready") { G.pt -= dt; if (G.pt <= 0) { G.phase = "fight"; G.msg = "JANG!"; G.pt = 0.8; } return; }
+  if (G.phase === "end") {
+    G.pt -= dt;
+    if (G.pt <= 0) {
+      if (G.r[0] >= 2 || G.r[1] >= 2) { G.phase = "over"; G.ev.push("win"); }
+      else newRound(G, cfg);
+    }
+    return;
+  }
+  if (G.msg === "JANG!" && (G.pt -= dt) <= 0) G.msg = "";
+  stepF(G, 0, in0, dt); stepF(G, 1, in1, dt);
+  const [a, b] = G.f;
+  const gap = b.x - a.x;
+  if (Math.abs(gap) < 40 && Math.abs(a.y - b.y) < 60) {
+    const push = (40 - Math.abs(gap)) / 2 * Math.sign(gap || 1);
+    a.x -= push; b.x += push;
+  }
+  G.time -= dt;
+  if (a.hp <= 0 || b.hp <= 0 || G.time <= 0) {
+    const w = a.hp > b.hp ? 0 : b.hp > a.hp ? 1 : -1;
+    if (w >= 0) G.r[w]++;
+    G.winner = w; G.phase = "end"; G.pt = 2.2;
+    G.msg = w < 0 ? "DURANG" : a.hp <= 0 || b.hp <= 0 ? "K.O.!" : "VAQT TUGADI";
+    G.ev.push("ko");
+  }
+}
+function botInput(G, i, diff) {
+  const f = G.f[i], o = G.f[1 - i], dist = Math.abs(o.x - f.x);
+  const inp = {}, pr = [0.012, 0.03, 0.06][diff];
+  if (G.phase !== "fight") return inp;
+  const dir = o.x > f.x ? "r" : "l", back = dir === "r" ? "l" : "r";
+  if (dist > 85) inp[dir] = true;
+  else {
+    if (Math.random() < pr) inp[["p", "p", "k", "q", "e"][Math.floor(Math.random() * 5)]] = true;
+    if (o.st === "punch" || o.st === "kick") { if (Math.random() < [0.05, 0.12, 0.3][diff]) inp.b = true; }
+    else if (dist < 55 && Math.random() < 0.02) inp[back] = true;
+  }
+  if (Math.random() < 0.004 * (diff + 1)) inp.j = true;
+  return inp;
+}
+
+/* ================= CHIZISH ================= */
+function line(c, ...p) { c.beginPath(); c.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) c.lineTo(p[i], p[i + 1]); c.stroke(); }
+function drawMan(c, f, col) {
+  const { x, y, face: s } = f, st = f.st;
+  const lean = st === "hurt" ? -s * 10 : 0;
+  const prog = MV[st] ? Math.min(f.t / f.d, 1) : 0, p = Math.sin(prog * Math.PI);
+  const sw = Math.sin(f.walk) * 16, air = y < GY;
+  c.save();
+  c.strokeStyle = col; c.lineWidth = 6; c.lineCap = c.lineJoin = "round";
+  if (st === "down") { c.translate(x, y); c.rotate(-s * Math.PI / 2); c.translate(-x, -y); }
+  if (st === "spin") { c.translate(x, y - 60); c.rotate(prog * Math.PI * 2 * s); c.translate(-x, -(y - 60)); }
+  if (st === "sweep") c.translate(0, 20);
+  const hip = y - 48, sh = y - 92, bx = x + lean, ay = sh + 8;
+  if (st === "sweep") { line(c, x, hip, x + s * (22 + 70 * p), y - 26); line(c, x, hip, x - s * 14, y - 22); }
+  else if (st === "spin") { line(c, x, hip, x + s * 70, hip - 4); line(c, x, hip, x - s * 14, y); }
+  else if (air) { line(c, x, hip, x + s * 16, y - 18, x + s * 8, y - 4); line(c, x, hip, x - s * 14, y - 14, x - s * 16, y - 2); }
+  else if (st === "kick") { line(c, x, hip, x + s * (20 + 62 * p), hip - 6 + 6 * p, x + s * (30 + 62 * p), hip - 10); line(c, x, hip, x - s * 6, y); }
+  else { line(c, x, hip, x + sw, y); line(c, x, hip, x - sw, y); }
+  line(c, x, hip, bx, sh);
+  if (st === "punch") { line(c, bx, ay, bx + s * (14 + 52 * p), ay - 2); line(c, bx, ay, bx - s * 14, ay + 22, bx - s * 4, ay + 6); }
+  else if (st === "spin") { line(c, bx, ay, bx + s * 42, ay - 8); line(c, bx, ay, bx - s * 42, ay - 8); }
+  else if (f.blk) { line(c, bx, ay, bx + s * 18, ay + 10, bx + s * 22, ay - 16); line(c, bx, ay, bx + s * 10, ay + 12, bx + s * 26, ay - 6); }
+  else if (st === "hurt" || st === "down") { line(c, bx, ay, bx - s * 20, ay + 18); line(c, bx, ay, bx - s * 8, ay + 26); }
+  else { line(c, bx, ay, bx + s * 16 - sw * 0.4, ay + 24); line(c, bx, ay, bx - s * 12 + sw * 0.4, ay + 24); }
+  c.beginPath(); c.arc(bx + lean * 0.3, y - 110, 15, 0, 7); c.stroke();
+  c.fillStyle = col; c.beginPath(); c.arc(bx + s * 6, y - 112, 2.5, 0, 7); c.fill();
+  c.restore();
+}
+function render(c, G, cfg, names) {
+  const th = THEMES[cfg.theme];
+  const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, th[0]); g.addColorStop(1, th[1]);
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.fillStyle = "rgba(255,255,255,.12)";
+  for (let i = 0; i < 18; i++) c.fillRect((i * 137) % W, (i * 53) % 200, 2, 2);
+  c.save();
+  if (cfg.shake && G.shake > 0) c.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 8);
+  c.fillStyle = th[2]; c.fillRect(0, GY, W, H - GY);
+  c.fillStyle = "rgba(255,255,255,.25)"; c.fillRect(0, GY, W, 3);
+  // soyalar
+  G.f.forEach((f) => { c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(f.x, GY + 6, 28 - (GY - f.y) / 12, 6, 0, 0, 7); c.fill(); });
+  drawMan(c, G.f[0], cfg.c1); drawMan(c, G.f[1], cfg.c2);
+  G.spark.forEach((s) => {
+    c.strokeStyle = "#ffe36e"; c.lineWidth = 3;
+    for (let k = 0; k < 6; k++) { const a = k * 1.05, r = 26 * (1 - s.t * 2); line(c, s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8, s.x + Math.cos(a) * (10 + r), s.y + Math.sin(a) * (10 + r)); }
+  });
+  c.restore();
+  // HUD
+  const bar = (x, f, col, right) => {
+    const w = 300, p = f.hp / cfg.hp;
+    c.fillStyle = "rgba(0,0,0,.5)"; c.fillRect(x, 20, w, 18);
+    c.fillStyle = col; c.fillRect(right ? x + w * (1 - p) : x, 20, w * p, 18);
+    c.strokeStyle = "#fff"; c.lineWidth = 2; c.strokeRect(x, 20, w, 18);
+  };
+  bar(30, G.f[0], cfg.c1, false); bar(W - 330, G.f[1], cfg.c2, true);
+  c.fillStyle = "#fff"; c.font = "700 16px Rubik, sans-serif";
+  c.textAlign = "left"; c.fillText(names[0], 30, 58); c.textAlign = "right"; c.fillText(names[1], W - 30, 58);
+  c.textAlign = "center"; c.font = "700 30px Rubik, sans-serif";
+  c.fillText(Math.max(0, Math.ceil(G.time)), W / 2, 40);
+  c.font = "20px sans-serif";
+  c.fillText((G.r[0] > 0 ? "★" : "☆") + (G.r[0] > 1 ? "★" : "☆"), 190, 82);
+  c.fillText((G.r[1] > 0 ? "★" : "☆") + (G.r[1] > 1 ? "★" : "☆"), W - 190, 82);
+  if (G.msg && G.phase !== "over") {
+    c.font = "900 64px Rubik, sans-serif"; c.fillStyle = "#fff"; c.strokeStyle = "#000"; c.lineWidth = 6;
+    c.strokeText(G.msg, W / 2, 190); c.fillText(G.msg, W / 2, 190);
+  }
+}
+
+/* ================= O'YIN KOMPONENTI ================= */
+const KEYS = { a: "l", arrowleft: "l", d: "r", arrowright: "r", w: "j", arrowup: "j", " ": "j", j: "p", z: "p", k: "k", x: "k", l: "b", c: "b", s: "b", arrowdown: "b", q: "q", u: "q", e: "e", i: "e" };
+
+function Game({ mode, cfg, net, onExit }) {
+  const cv = useRef(), inp = useRef({}), G = useRef(newGame(cfg)), last = useRef(0);
+  const [over, setOver] = useState(null);
+  const [cheatOpen, setCheatOpen] = useState(false), [code, setCode] = useState(""), [cmsg, setCmsg] = useState("");
+  const pause = useRef(false);
+  const toggleCheat = (v) => { SFX.click(); pause.current = v; setCheatOpen(v); setCmsg(""); };
+  const tryCheat = () => {
+    const c = CHEATS[code.trim().toUpperCase()];
+    if (net) return setCmsg("Onlayn rejimda chit ishlamaydi");
+    if (!c) return setCmsg("Noto'g'ri kod");
+    c[1](G.current, cfg); SFX.cheat(); setCmsg("✔ " + c[0]); setCode("");
+  };
+  const remote = useRef({}), names = useRef([cfg.name, mode === "bot" ? "Robot" : "Raqib"]);
+  const guest = mode === "guest";
+
+  const rematch = () => {
+    if (guest) net.conn.send({ t: "rematch" });
+    else { G.current = newGame(cfg, G.current.ch); setOver(null); }
+  };
+
+  useEffect(() => {
+    applyVol(cfg); if (cfg.music > 0) startMusic();
+    const kd = (e) => { if (e.target.tagName === "INPUT") return; const k = KEYS[e.key.toLowerCase()]; if (k) { inp.current[k] = e.type === "keydown"; e.preventDefault(); } };
+    window.addEventListener("keydown", kd); window.addEventListener("keyup", kd);
+    if (net) {
+      net.conn.on("data", (m) => {
+        if (m.t === "in") remote.current = m.i;
+        if (m.t === "rematch" && !guest) { G.current = newGame(cfg); setOver(null); }
+        if (m.t === "snap") { const ev = G.current.ev; G.current = { ...m.g, ev: [...ev, ...m.g.ev] }; }
+        if (m.t === "name") names.current[1] = m.n;
+      });
+      net.conn.on("close", () => setOver("left"));
+      net.conn.send({ t: "name", n: cfg.name });
+    }
+    let raf, acc = 0, tick = 0;
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - (last.current || now)) / 1000); last.current = now;
+      const g = G.current;
+      if (guest) {
+        net.conn.send({ t: "in", i: inp.current });
+        if (g.shake > 0) g.shake -= dt;
+      } else {
+        const i1 = mode === "bot" ? botInput(g, 1, cfg.diff) : remote.current;
+        if (!pause.current) stepGame(g, inp.current, i1, dt, cfg);
+        if (net && ++tick % 2 === 0) { net.conn.send({ t: "snap", g: { ...g, ev: g.ev } }); acc = 1; }
+      }
+      // ovozlar
+      g.ev.forEach((e) => {
+        SFX[e]?.();
+        if (cfg.vibrate && navigator.vibrate && (e === "hit" || e === "ko")) navigator.vibrate(e === "ko" ? 200 : 40);
+      });
+      if (acc || !net) g.ev = []; acc = 0;
+      if (guest) g.ev = [];
+      if (g.phase === "over") setOver((o) => o || (g.r[0] > g.r[1] ? names.current[0] : names.current[1]));
+      else setOver((o) => (o === "left" ? o : null));
+      render(cv.current.getContext("2d"), g, cfg, names.current);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf); stopMusic();
+      window.removeEventListener("keydown", kd); window.removeEventListener("keyup", kd);
+    };
+  }, []);
+
+  const Btn = ({ k, children, cls }) => {
+    const set = (v) => (e) => { e.preventDefault(); inp.current[k] = v; };
+    return (
+      <button className={"pad " + (cls || "")} style={{ "--s": cfg.btnSize }}
+        onPointerDown={set(true)} onPointerUp={set(false)} onPointerLeave={set(false)} onPointerCancel={set(false)}
+        onContextMenu={(e) => e.preventDefault()}>{children}</button>
+    );
+  };
+
+  return (
+    <div className="game">
+      <canvas ref={cv} width={W} height={H} />
+      <button className="pause" onClick={() => { SFX.click(); onExit(); }}>✕</button>
+      {!net && <button className="pause cheatbtn" onClick={() => toggleCheat(true)}>🔑</button>}
+      <div className={"pads" + (cfg.leftHand ? " flip" : "")}>
+        <div className="grp"><Btn k="l">◀</Btn><Btn k="r">▶</Btn></div>
+        <div className="grp act"><Btn k="b" cls="b">🛡</Btn><Btn k="j" cls="j">⤒</Btn><Btn k="p" cls="p">👊</Btn><Btn k="k" cls="k">🦶</Btn><Btn k="q" cls="q">🌀</Btn><Btn k="e" cls="e">🦿</Btn></div>
+      </div>
+      {cfg.hints && <div className="hint">A/D yurish · W sakrash · J musht · K tepish · Q aylanib tepish · E chalish · L himoya</div>}
+      {cheatOpen && (
+        <div className="overlay cheat">
+          <h2>Chit kod</h2>
+          <input className="inp" autoFocus value={code} placeholder="KOD" onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.key === "Enter" && tryCheat()} />
+          <button className="big" onClick={tryCheat}>Kiritish</button>
+          <p className="msg">{cmsg}</p>
+          <p className="list">KUCH · SUPER · TEZ · SAKRA · OLMAS · JON · ZAIF · HAMMASI · NOL</p>
+          <button className="big alt" onClick={() => toggleCheat(false)}>Davom etish</button>
+        </div>
+      )}
+      {over && (
+        <div className="overlay">
+          <h2>{over === "left" ? "Raqib chiqib ketdi" : over + " g'olib!"}</h2>
+          {over !== "left" && <button className="big" onClick={() => { SFX.click(); rematch(); }}>Qayta o'ynash</button>}
+          <button className="big alt" onClick={() => { SFX.click(); onExit(); }}>Bosh menyu</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ================= ONLINE LOBBI ================= */
+function Lobby({ cfg, onStart, onBack }) {
+  const [code, setCode] = useState(""), [inCode, setIn] = useState(""), [msg, setMsg] = useState("");
+  const peer = useRef(null);
+  useEffect(() => () => { if (!peer.current?._started) peer.current?.destroy(); }, []);
+
+  const host = () => {
+    SFX.click(); peer.current?.destroy();
+    const id = String(Math.floor(10000 + Math.random() * 90000));
+    const p = new Peer("sfight-" + id); peer.current = p;
+    setMsg("Server bilan ulanmoqda...");
+    p.on("open", () => { setCode(id); setMsg("Do'stingiz kodni kiritishini kuting..."); });
+    p.on("connection", (conn) => conn.on("open", () => { p._started = true; onStart({ mode: "host", net: { conn, peer: p } }); }));
+    p.on("error", () => setMsg("Xatolik. Qayta urinib ko'ring."));
+  };
+  const join = () => {
+    SFX.click();
+    if (inCode.length < 5) return setMsg("5 xonali kodni kiriting");
+    peer.current?.destroy();
+    const p = new Peer(); peer.current = p; setMsg("Ulanmoqda...");
+    p.on("open", () => {
+      const conn = p.connect("sfight-" + inCode, { reliable: false });
+      conn.on("open", () => { p._started = true; onStart({ mode: "guest", net: { conn, peer: p } }); });
+      setTimeout(() => setMsg((m) => (m === "Ulanmoqda..." ? "Xona topilmadi. Kodni tekshiring." : m)), 8000);
+    });
+    p.on("error", () => setMsg("Xona topilmadi."));
+  };
+  return (
+    <div className="panel">
+      <h2>Onlayn o'yin</h2>
+      <div className="card">
+        <h3>Xona ochish</h3>
+        {code ? <div className="code">{code}</div> : <button className="big" onClick={host}>Kod yaratish</button>}
+      </div>
+      <div className="card">
+        <h3>Xonaga kirish</h3>
+        <input className="inp" inputMode="numeric" maxLength={5} placeholder="12345" value={inCode} onChange={(e) => setIn(e.target.value.replace(/\D/g, ""))} />
+        <button className="big alt" onClick={join}>Ulanish</button>
+      </div>
+      <p className="msg">{msg}</p>
+      <button className="back" onClick={() => { SFX.click(); onBack(); }}>← Orqaga</button>
+    </div>
+  );
+}
+
+/* ================= SOZLAMALAR ================= */
+function Settings({ cfg, setCfg, onBack }) {
+  const set = (k, v) => setCfg({ ...cfg, [k]: v });
+  const Row = ({ t, children }) => <div className="row"><span>{t}</span>{children}</div>;
+  const Range = ({ k, min = 0, max = 1, st = 0.05 }) => (
+    <input type="range" min={min} max={max} step={st} value={cfg[k]} onChange={(e) => set(k, +e.target.value)} onPointerUp={SFX.click} />
+  );
+  const Tog = ({ k }) => <button className={"tog" + (cfg[k] ? " on" : "")} onClick={() => { set(k, !cfg[k]); SFX.click(); }}><i /></button>;
+  const Seg = ({ k, opts }) => (
+    <div className="seg">{opts.map(([v, l]) => <button key={v} className={cfg[k] === v ? "on" : ""} onClick={() => { set(k, v); SFX.click(); }}>{l}</button>)}</div>
+  );
+  return (
+    <div className="panel scroll">
+      <h2>Sozlamalar</h2>
+      <h4>Ovoz</h4>
+      <Row t="Effektlar"><Range k="sfx" /></Row>
+      <Row t="Musiqa"><Range k="music" /></Row>
+      <Row t="Tebranish"><Tog k="vibrate" /></Row>
+      <h4>O'yin</h4>
+      <Row t="Qiyinlik"><Seg k="diff" opts={[[0, "Oson"], [1, "O'rta"], [2, "Qiyin"]]} /></Row>
+      <Row t="Jon"><Seg k="hp" opts={[[60, "60"], [100, "100"], [150, "150"]]} /></Row>
+      <Row t="Raund vaqti"><Seg k="time" opts={[[30, "30s"], [60, "60s"], [90, "90s"]]} /></Row>
+      <Row t="Ekran silkinishi"><Tog k="shake" /></Row>
+      <Row t="Klaviatura yordami"><Tog k="hints" /></Row>
+      <h4>Boshqaruv</h4>
+      <Row t="Tugma o'lchami"><Range k="btnSize" min={0.7} max={1.4} st={0.1} /></Row>
+      <Row t="Chapaqay rejim"><Tog k="leftHand" /></Row>
+      <h4>Ko'rinish</h4>
+      <Row t="Ismingiz"><input className="inp sm" maxLength={10} value={cfg.name} onChange={(e) => set("name", e.target.value)} /></Row>
+      <Row t="Fon"><Seg k="theme" opts={[["night", "Tun"], ["sunset", "Shafaq"], ["day", "Kun"], ["neon", "Neon"]]} /></Row>
+      <Row t="Sizning rangingiz"><div className="cols">{COLORS.map((c) => <b key={c} style={{ background: c }} className={cfg.c1 === c ? "on" : ""} onClick={() => { set("c1", c); SFX.click(); }} />)}</div></Row>
+      <Row t="Raqib rangi"><div className="cols">{COLORS.map((c) => <b key={c} style={{ background: c }} className={cfg.c2 === c ? "on" : ""} onClick={() => { set("c2", c); SFX.click(); }} />)}</div></Row>
+      <button className="back" onClick={() => { SFX.click(); onBack(); }}>← Orqaga</button>
+    </div>
+  );
+}
+
+/* ================= ASOSIY ================= */
+function App() {
+  const [cfg, setCfgS] = useState(loadCfg);
+  const [scr, setScr] = useState("home");
+  const [run, setRun] = useState(null);
+  const setCfg = (c) => { setCfgS(c); applyVol(c); try { localStorage.setItem("sf_cfg", JSON.stringify(c)); } catch { /* */ } };
+  useEffect(() => { applyVol(cfg); }, []);
+  const go = (s) => { SFX.click(); setScr(s); };
+  const exit = () => { run?.net?.peer?.destroy(); setRun(null); setScr("home"); };
+
+  if (scr === "game" && run) return <div className={"app " + cfg.theme}><Game {...run} cfg={cfg} onExit={exit} /></div>;
+  return (
+    <div className={"app " + cfg.theme}>
+      {scr === "home" && (
+        <div className="home">
+          <div className="logo">
+            <svg viewBox="0 0 200 90" className="duel">
+              <g stroke={cfg.c1} strokeWidth="6" strokeLinecap="round" fill="none"><circle cx="45" cy="20" r="10" /><path d="M45 30V58M45 58L32 84M45 58L58 84M45 38L78 34" /></g>
+              <g stroke={cfg.c2} strokeWidth="6" strokeLinecap="round" fill="none"><circle cx="155" cy="20" r="10" /><path d="M155 30V58M155 58L142 84M155 58L168 84M155 38L122 34" /></g>
+            </svg>
+            <h1>STICK<br />FIGHT</h1>
+          </div>
+          <button className="big" onClick={() => { ac(); SFX.start(); setRun({ mode: "bot" }); setScr("game"); }}>▶ O'ynash</button>
+          <button className="big alt" onClick={() => go("online")}>🌐 Onlayn</button>
+          <button className="big ghost" onClick={() => go("settings")}>⚙ Sozlamalar</button>
+        </div>
+      )}
+      {scr === "online" && <Lobby cfg={cfg} onBack={() => setScr("home")} onStart={(r) => { setRun(r); setScr("game"); }} />}
+      {scr === "settings" && <Settings cfg={cfg} setCfg={setCfg} onBack={() => setScr("home")} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
